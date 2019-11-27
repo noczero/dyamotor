@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 26, 2019 at 07:24 PM
+-- Generation Time: Nov 27, 2019 at 08:02 AM
 -- Server version: 10.4.8-MariaDB
 -- PHP Version: 7.1.32
 
@@ -59,7 +59,10 @@ INSERT INTO `beli_mobil` (`id_beli`, `id_user`, `id_mobil`, `tgl_transaksi`, `me
 (15, 9, 8, '2019-11-27', 1, 'Mandiri', 'hyper-logo1.png'),
 (16, 9, 7, '2019-11-27', 1, 'BCA', 'download.jpeg'),
 (17, 8, 7, '2019-11-27', 2, 'Mandiri', NULL),
-(18, 8, 9, '2019-11-27', 1, 'BCA', NULL);
+(18, 8, 9, '2019-11-27', 1, 'BCA', NULL),
+(19, 8, 10, '2019-11-27', 2, 'Mandiri', NULL),
+(20, 8, 7, '2019-11-27', 2, 'Mandiri', NULL),
+(21, 8, 7, '2019-11-27', 2, 'BCA', 'crash.jpeg');
 
 -- --------------------------------------------------------
 
@@ -83,14 +86,22 @@ CREATE TABLE `cash` (
 
 CREATE TABLE `kredit` (
   `id_kredit` int(3) NOT NULL,
-  `harga_mobil` int(50) NOT NULL,
+  `id_beli` int(3) NOT NULL,
   `uang_muka` int(50) NOT NULL,
-  `kondisi_mobil` varchar(50) NOT NULL,
-  `zona_wilayah` varchar(50) NOT NULL,
-  `lama_tenor` varchar(50) NOT NULL,
-  `jumlah_angsuran` int(50) NOT NULL,
-  `id_transaksi` int(3) NOT NULL
+  `lama_tenor` int(2) DEFAULT NULL,
+  `asuransi` int(1) NOT NULL,
+  `metode_kredit` tinyint(1) DEFAULT NULL,
+  `bayar` varchar(50) NOT NULL,
+  `angsuran` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `kredit`
+--
+
+INSERT INTO `kredit` (`id_kredit`, `id_beli`, `uang_muka`, `lama_tenor`, `asuransi`, `metode_kredit`, `bayar`, `angsuran`) VALUES
+(1, 20, 135000000, 2, 3, 1, '149318182', '14318182'),
+(2, 21, 135000000, 2, 2, 1, '149318182', '14318182');
 
 -- --------------------------------------------------------
 
@@ -325,8 +336,7 @@ ALTER TABLE `cash`
 -- Indexes for table `kredit`
 --
 ALTER TABLE `kredit`
-  ADD PRIMARY KEY (`id_kredit`),
-  ADD KEY `id_transaksi` (`id_transaksi`);
+  ADD PRIMARY KEY (`id_kredit`);
 
 --
 -- Indexes for table `mobil`
@@ -398,7 +408,7 @@ ALTER TABLE `user_data`
 -- AUTO_INCREMENT for table `beli_mobil`
 --
 ALTER TABLE `beli_mobil`
-  MODIFY `id_beli` int(3) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id_beli` int(3) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `cash`
@@ -410,7 +420,7 @@ ALTER TABLE `cash`
 -- AUTO_INCREMENT for table `kredit`
 --
 ALTER TABLE `kredit`
-  MODIFY `id_kredit` int(3) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_kredit` int(3) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `mobil`
@@ -475,12 +485,6 @@ ALTER TABLE `user_data`
 --
 ALTER TABLE `cash`
   ADD CONSTRAINT `cash_ibfk_1` FOREIGN KEY (`id_transaksi`) REFERENCES `transaksi` (`id_transaksi`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `kredit`
---
-ALTER TABLE `kredit`
-  ADD CONSTRAINT `kredit_ibfk_1` FOREIGN KEY (`id_transaksi`) REFERENCES `transaksi` (`id_transaksi`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `mobil`
