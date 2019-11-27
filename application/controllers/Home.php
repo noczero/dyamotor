@@ -3,11 +3,12 @@ class Home extends CI_Controller{
   public function __construct() {
     parent::__construct();
     $this->load->model('AuthModel');
-    $this->load->model('Mobil_model', 'mobil');
+    $this->load->model('Mobil_model');
     $this->load->model('Tukartambah_Model', 'tt');
     $this->load->model('UserData');
     $this->load->model('Beli_Mobil');
     $this->load->model('Rekening');
+    $this->load->model('Kredit');
     $this->load->library('form_validation');
     
     if($this->session->userdata('isLoggedIn')) {
@@ -22,14 +23,14 @@ class Home extends CI_Controller{
   public function index()
   {
     $this->load->view("layout/header_user");
-    $this->load->view("user/home", array('datas' => $this->mobil->semua_mobil()));
+    $this->load->view("user/home", array('datas' => $this->Mobil_model->semua_mobil()));
     $this->load->view("layout/footer");
   }
 
   public function tukar_tambah1()
   {
     $this->load->view("layout/header_user");
-    $this->load->view("tukar_tambah1", array('datas' => $this->mobil->semua_mobil()));
+    $this->load->view("tukar_tambah1", array('datas' => $this->Mobil_model->semua_mobil()));
     $this->load->view("layout/footer");
   }
 
@@ -308,7 +309,20 @@ class Home extends CI_Controller{
 		// if ($input) {
 		// 	$this->konfirmasi_pembelian($id_mobil);
 		// }
-		redirect('home/konfirmasi_pembelian/'.$id_beli.'/'.$id_mobil, 'refresh'); 
+
+		// cek metode pembayaran 
+		$metode_pembayaran = $this->cek_metode_pembayaran($id_beli);
+
+		if ($metode_pembayaran == 1){
+			// cash
+			redirect('home/konfirmasi_pembelian/'.$id_beli.'/'.$id_mobil, 'refresh'); 
+		} else if ($metode_pembayaran == 2){
+			// kredit
+			redirect('home/simulasi_kredit/'.$id_beli.'/'.$id_mobil, 'refresh'); 
+
+		}
+
+	
 	}
 
 	public function konfirmasi_pembelian($id_beli,$id_mobil){
@@ -361,6 +375,143 @@ class Home extends CI_Controller{
 			redirect('home','refresh'); 
 		} 
 
+	}
+
+	public function cek_metode_pembayaran($id_beli){
+		// return metode pembayaran dari model beli
+		// 1 cash, 2 kredit.
+
+		$data = $this->Beli_Mobil->get_one_only($id_beli);
+
+		$result = $data['metode_pembayaran'];
+
+
+		return $result;
+	}
+
+	public function simulasi_kredit($id_beli, $id_mobil){
+		// cek mobil bekas atau baru
+		$data_mobil = $this->Mobil_model->satu_mobil($id_mobil);
+		$kondisi = $data_mobil['kondisi'];
+
+		// kondisi mobil 0 baru, 1 bekas
+		if ($kondisi){
+			// bekas
+			$uang_muka = $data_mobil['harga'] * 0.2;
+		} else {
+			// baru
+			$uang_muka = $data_mobil['harga'] * 0.3;
+		}
+
+		$data['id_beli'] = $id_beli;
+		$data['id_mobil'] = $id_mobil;
+		$data['harga'] = $data_mobil['harga'];
+		$data['uang_muka'] = $uang_muka;
+		$data['kondisi'] = $kondisi;
+
+		$this->load->view('layout/header_user');
+		$this->load->view('user/simulasi_kredit', $data);
+		$this->load->view('layout/footer');
+
+
+	}
+
+	public function insert_kredit($id_beli, $id_mobil){
+
+	  	$this->form_validation->set_rules('uang_muka', 'Uang Muka', 'trim|required');
+
+	  	$this->form_validation->set_rules('asuransi', 'Asuransi', 'trim|required');
+
+	  	if ($this->form_validation->run() == FALSE) {
+	  		$this->simulasi_kredit($id_beli, $id_mobil);
+			return;
+		}
+
+
+		$data['id_beli'] = $id_beli;
+		$data['uang_muka'] = $this->input->post('uang_muka');
+		$data['asuransi'] = $this->input->post('asuransi');
+
+		$id_kredit = $this->Kredit->insert_kredit_get_id($data);
+
+		redirect('home/tenor_kredit/'.$id_kredit, 'refresh'); 	
+ 		
+	}
+
+
+	public function tenor_kredit($id_kredit){
+		// tampil tabel tenor
+		$data_kredit = $this->Kredit->get_one($id_kredit);
+		$harga_mobil = $this->Kredit->get_harga_mobil($id_kredit);
+		$id_mobil = $this->Kredit->get_id_mobil($id_kredit);
+
+
+		//print_r($data_kredit);
+		//print_r($harga_mobil['harga']);
+		//print_r($id_mobil['id_mobil']);
+		$data['id_kredit'] = $id_kredit;
+		$data['id_mobil'] = $id_mobil['id_mobil'];
+		$data['id_beli'] = $data_kredit['id_beli'];
+		$data['uang_muka'] = $data_kredit['uang_muka'];
+		$data['uang_angsuran'] = ((int) $harga_mobil['harga']) - ((int) $data['uang_muka']); // selisih harga mobil kurang dari uang muka.
+		// print_r($data);
+
+		 $this->load->view('layout/header_user');
+		 $this->load->view('user/tenor_kredit' , $data);
+		 $this->load->view('layout/footer');
+
+
+	}
+
+	public function apply_kredit(){
+		$data = $this->input->get();
+
+		$data_update['bayar'] = $data['bayar'];
+		$data_update['angsuran'] = $data['angsuran'];
+		$data_update['lama_tenor'] = $data['tenor'];
+		$data_update['metode_kredit'] = $data['metode_kredit'];
+		$id_kredit = $data['id_kredit'];
+		$result = $this->Kredit->apply($data_update,$id_kredit);
+
+		//print_r($result);
+		redirect('home/konfirmasi_pembelian_kredit/'.$id_kredit, 'refresh'); 
+
+	}
+
+
+	public function konfirmasi_pembelian_kredit($id_kredit){
+		$data_kredit = $this->Kredit->get_one($id_kredit);
+		$id_mobil = $this->Kredit->get_id_mobil($id_kredit);
+
+
+		$data['user_data'] =  $this->Beli_Mobil->get_konfirmasi_pembelian($data_kredit['id_beli']);
+		//print_r($data);
+		$data['id'] = $id_mobil['id_mobil'];
+		$data['data_kredit'] = $data_kredit;
+		$data['id_kredit'] = $id_kredit;
+
+		$this->load->view("layout/header_user");
+		$this->load->view("user/konfirmasi_pembelian_kredit", $data);
+		$this->load->view("layout/footer");
+	}
+
+	public function transfer_kredit($id_kredit){
+		$data_kredit = $this->Kredit->get_one($id_kredit);
+		$id_mobil = $this->Kredit->get_id_mobil($id_kredit);
+		//print_r($data);
+		$data['belimobil'] =  $this->Beli_Mobil->get_data_belimobil($data_kredit['id_beli']);
+		$data['id_mobil'] = $id_mobil['id_mobil'];
+		$data['id_beli'] = $data_kredit['id_beli'];
+
+		//print_r($data['belimobil']);
+		$rek_tujuan = $data['belimobil']['transfer_bank'];
+
+		$data['rekening'] = $this->Rekening->get_rekening($rek_tujuan);
+		$data['data_kredit'] = $data_kredit;
+
+		$this->load->view('layout/header_user');
+		$this->load->view('user/transfer_kredit', $data);
+		$this->load->view('layout/footer');
 	}
 
 }

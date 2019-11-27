@@ -31,10 +31,8 @@ class Beli_Mobil extends CI_Model{
 		return $this->db->insert_id();
 	}
 
-	public function get_last_id_beli($id_user, $id_mobil) {
-		// ambil id beli di tabel pembelian yang terbaru
-		$this->db->where('id_user', $id_user);
-		$this->db->where('id_mobil', $id_mobil);
+	public function get_one_only($id_beli) {
+		$this->db->where('id_beli', $id_beli);
 		return $this->db->get('beli_mobil')->result_array()[0];
 	}
 

@@ -110,7 +110,11 @@
 									</span>
 									
 									<h4 class=" mb-2 d-xl-inline-block d-block ml-xl-4 "> Harga : Rp.<?php echo $user_data['harga'] ?>
-									</h4>	
+									</h4>
+									<h4 class=" mb-2 d-xl-inline-block d-block ml-xl-4 "> Pembayaran Pertama : Rp.<?php echo $data_kredit['bayar'] ?>
+									</h4>		
+									<h4 class=" mb-2 d-xl-inline-block d-block ml-xl-4 "> Angsuran : Rp.<?php echo $data_kredit['angsuran'] ?>
+									</h4>		
 													
 								</p>
 								
@@ -125,5 +129,5 @@
 		</div>
 	</div>
 </div>	<div class="text-center">
-						<a class="btn btn-primary" href="<?php echo base_url('home/transfer/').$user_data['id_beli'] ?>"> Beli </a>
+						<a class="btn btn-primary" href="<?php echo base_url('home/transfer_kredit/').$id_kredit ?>"> Beli </a>
 					</div>

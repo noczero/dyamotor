@@ -28,4 +28,5 @@ class Mobil_model extends CI_Model
 	public function satu_mobil($id) {
 		return $this->db->select('*')->from('mobil')->where('id_mobil', $id)->get()->result_array()[0];
 	}
+
 }
